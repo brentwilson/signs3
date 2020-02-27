@@ -49,6 +49,7 @@ class Logos(models.Model):
 class Event(models.Model):
     eventId = models.IntegerField(primary_key=True)
     name = models.CharField(max_length=255)
+    refreshKey = models.CharField(max_length=255, default="1")
     override_date_time = models.DateTimeField(null=True, blank=True)
     active = models.BooleanField(default=True)
 
@@ -71,8 +72,7 @@ class Rooms(models.Model):
         Event, null=True, blank=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     location_name = models.TextField(blank=True, null=True)
-    logo = models.ForeignKey(
-        Logos, null=True, blank=True, on_delete=models.CASCADE)
+    logo = models.ForeignKey(Logos, null=True, blank=True, on_delete=models.CASCADE)
     override_date_time = models.DateTimeField(null=True, blank=True)
     page_content = RichTextField(null=True, blank=True)
     rotating_media_interval = models.PositiveSmallIntegerField(
