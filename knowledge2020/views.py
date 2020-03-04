@@ -21,22 +21,10 @@ def index(request):
             # room_settings = Rooms.objects.get(roomID=roomID)
 
             if mode == 'Today':
-                redirect_view = '/knowledge2020/today/' + roomID
+                redirect_view = '/knowledge2020/current/' + roomID
 
             elif mode == 'Combined Room':
-                redirect_view = '/knowledge2020/hallway_room/' + roomID
-
-            elif mode == 'cs_plan':
-                redirect_view = '/knowledge2020/cs_plan/' + roomID
-
-            elif mode == 'cs_deploy':
-                redirect_view = '/knowledge2020/cs_deploy/' + roomID
-
-            elif mode == 'cs_optimize':
-                redirect_view = '/knowledge2020/cs_optimize/' + roomID
-
-            elif mode == 'cs_extend':
-                redirect_view = '/knowledge2020/cs_extend/' + roomID
+                redirect_view = '/knowledge2020/combined/' + roomID
 
             elif mode == 'Blank':
                 redirect_view = '/knowledge2020/blank/' + roomID
@@ -45,13 +33,10 @@ def index(request):
                 redirect_view = '/knowledge2020/logo_only/' + roomID
 
             elif mode == 'Rotating Media':
-                redirect_view = '/knowledge2020/today_slider/' + roomID
+                redirect_view = '/knowledge2020/graphics/' + roomID
 
             elif mode == 'Custom Content':
                 redirect_view = '/knowledge2020/content/' + roomID
-
-            elif mode == 'Simple Logo':
-                redirect_view = '/knowledge2020/simple_logo/' + roomID
 
             return redirect(redirect_view)
 
@@ -63,3 +48,81 @@ def index(request):
 
     }
     return render(request, "index.html", context)
+
+
+def current(request, roomID):
+    room_settings = Rooms.objects.get(roomID=roomID)
+    body_class = room_settings.current_template
+    context = {
+        'roomID': roomID,
+        'body_class': body_class
+    }
+    return render(request, "today.html", context)
+
+def graphics(request, roomID):
+    context = {
+        'roomID': roomID,
+        'body_class': 'slider_page'
+    }
+    return render(request, "graphics.html", context)
+
+
+def combined(request, roomID):
+    context = {
+        'roomID': roomID,
+        'body_class': 'combined'
+    }
+    return render(request, 'combined.html', context)
+
+
+def custom_content(request, roomID):
+    override_data = check_for_override(roomID)
+
+    context = {
+        'roomID': roomID,
+        'body_class': 'custom_content',
+        'custom_content': override_data['room_settings'].page_content
+    }
+
+    return render(request, "custom_content.html", context)
+
+
+def default_screen(request, roomID):
+
+    context = {
+        'roomID': roomID,
+        'body_class': 'custom_content'
+    }
+
+    return render(request, "default.html", context)
+
+
+def check_for_override(roomID):
+    room_settings = Rooms.objects.get(roomID=roomID)
+    global_overrides = Event.objects.get(eventId=room_settings.event.eventId)
+
+    if room_settings.override_date_time:
+        override = True
+        currentDateTime = room_settings.override_date_time
+        todaysEndDate = datetime.combine(currentDateTime, time.max)
+
+    elif global_overrides.override_date_time:
+        override = True
+        currentDateTime = global_overrides.override_date_time
+        todaysEndDate = datetime.combine(currentDateTime, time.max)
+
+    else:
+        override = False
+        currentDateTime = datetime.now()
+        current_date = datetime.today()
+        todaysEndDate = datetime.combine(current_date, time.max)
+
+    override_data = {
+        'room_settings': room_settings,
+        'override': override,
+        'currentDateTime': currentDateTime,
+        'todaysEndDate': todaysEndDate
+
+    }
+
+    return override_data
