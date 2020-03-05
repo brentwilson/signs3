@@ -46,7 +46,7 @@ def index(request):
     context = {
         'form': form,
     }
-    
+
     return render(request, "index.html", context)
 
 
@@ -126,3 +126,85 @@ def check_for_override(roomID):
     }
 
     return override_data
+
+
+@api_view(['GET'])
+def current_combined(request, roomID):
+    override_data = check_for_override(roomID)
+
+    sessions_by_time = Sessions.objects.filter(
+        Q(end__gte=override_data['currentDateTime']) & Q(start__lte=override_data['todaysEndDate'])).exclude(scheduleStatus='Cancel').order_by(
+        'start')
+    sessions_to_show = sessions_by_time.filter(room__related_rooms=roomID)
+    messages = Messages.objects.filter(Q(start__lte=override_data['currentDateTime']) & Q(end__gte=override_data['currentDateTime']) & (
+        Q(room=roomID) | Q(global_message=True)))
+
+    sessions_serializer = SessionsSerializer(sessions_to_show, many=True)
+    room_serializer = RoomsSerializer(override_data['room_settings'])
+    messages_serializer = MessagesSerializer(messages, many=True)
+
+    return Response({
+        'room_data': room_serializer.data,
+        'sessions': sessions_serializer.data,
+        'messages': messages_serializer.data,
+        'currentDateTime': override_data['currentDateTime'],
+        'todaysEndDate': override_data['todaysEndDate']
+
+    })
+
+
+@api_view(['GET'])
+def current_data(request, roomID):
+    override_data = check_for_override(roomID)
+
+    sessions_by_time = Sessions.objects.filter(
+        Q(end__gte=override_data['currentDateTime']) & Q(
+            start__lte=override_data['todaysEndDate'])
+        & Q(room=roomID)).exclude(scheduleStatus='Cancel').order_by('start')
+    messages = Messages.objects.filter(Q(start__lte=override_data['currentDateTime']) & Q(end__gte=override_data['currentDateTime']) & (
+        Q(room=roomID) | Q(global_message=True)))
+
+    sessions_serializer = SessionsSerializer(sessions_by_time, many=True)
+    room_serializer = RoomsSerializer(override_data['room_settings'])
+    messages_serializer = MessagesSerializer(messages, many=True)
+
+    return Response({
+        'room_data': room_serializer.data,
+        'sessions': sessions_serializer.data,
+        'messages': messages_serializer.data,
+        'currentDateTime': override_data['currentDateTime'],
+        'todaysEndDate': override_data['todaysEndDate']
+
+    })
+
+
+@api_view(['GET'])
+def current_data_with_images(request, roomID):
+    override_data = check_for_override(roomID)
+
+    sessions_by_time = Sessions.objects.filter(
+        Q(end__gte=override_data['currentDateTime']) & Q(start__lte=override_data['todaysEndDate']) & Q(
+            room=roomID)).exclude(scheduleStatus='Cancel').order_by(
+        'start')
+    messages = Messages.objects.filter(
+        Q(start__lte=override_data['currentDateTime']) & Q(end__gte=override_data['currentDateTime']) & (
+            Q(room=roomID) | Q(global_message=True)))
+    rotating_media = ScheduledMedia.objects.filter(Q(room=roomID) & (
+        Q(start__lte=override_data['currentDateTime']) & Q(end__gte=override_data['currentDateTime']) | Q(
+            start__isnull=True))).order_by('list_order')
+
+    sessions_serializer = SessionsSerializer(sessions_by_time, many=True)
+    room_serializer = RoomsSerializer(override_data['room_settings'])
+    messages_serializer = MessagesSerializer(messages, many=True)
+    rotating_media_serializer = ScheduledMediaSerializer(
+        rotating_media, many=True)
+
+    return Response({
+        'room_data': room_serializer.data,
+        'sessions': sessions_serializer.data,
+        'messages': messages_serializer.data,
+        'currentDateTime': override_data['currentDateTime'],
+        'todaysEndDate': override_data['todaysEndDate'],
+        'media': rotating_media_serializer.data
+
+    })
