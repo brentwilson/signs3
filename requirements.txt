@@ -18,7 +18,7 @@ lazy-object-proxy==1.4.3
 logilab-astng==0.24.3
 logilab-common==1.5.2
 mccabe==0.6.1
-Pillow==7.0.0
+Pillow==9.3.0
 pycodestyle==2.5.0
 pylint==0.28.0
 python-dateutil==2.8.1
